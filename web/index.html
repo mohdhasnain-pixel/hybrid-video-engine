@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Enhancer</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --panel-2: #f0f2f5; --text: #15181d; --muted: #5d6673;
+  --line: #dde1e7; --accent: #2f6fed; --accent-2: #e8f0fe; --ok: #1a7f4b; --ok-bg: #e6f4ec;
+  --warn: #9a6200; --warn-bg: #fff4dc; --bad: #b42318; --bad-bg: #fde8e7; --radius: 10px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f1115; --panel: #171a20; --panel-2: #1e222a; --text: #e8eaee; --muted: #9aa3af;
+    --line: #2a2f38; --accent: #6b9bff; --accent-2: #1c2a45; --ok: #4cc38a; --ok-bg: #12291e;
+    --warn: #f0b44c; --warn-bg: #2e2412; --bad: #ff7b72; --bad-bg: #331a19; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 20px;
+  border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 5; }
+header h1 { font-size: 16px; margin: 0; font-weight: 650; }
+header .sub { color: var(--muted); font-size: 13px; }
+.spacer { flex: 1; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; background: var(--panel-2); border: 1px solid var(--line); white-space: nowrap; }
+.badge.local { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.badge.s3 { background: var(--accent-2); color: var(--accent); border-color: transparent; }
+main { display: grid; grid-template-columns: 360px 1fr; gap: 16px; padding: 16px 20px; max-width: 1600px; margin: 0 auto; }
+@media (max-width: 980px) { main { grid-template-columns: 1fr; padding: 12px 16px; } }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.card + .card { margin-top: 16px; }
+.card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 12px; }
+.drop { border: 2px dashed var(--line); border-radius: var(--radius); padding: 22px 12px; text-align: center;
+  cursor: pointer; transition: .15s; color: var(--muted); }
+.drop.over, .drop:hover { border-color: var(--accent); background: var(--accent-2); color: var(--text); }
+.drop strong { color: var(--text); display: block; margin-bottom: 2px; }
+label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; font-weight: 600; }
+select, input[type=number] { width: 100%; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--line);
+  background: var(--panel); color: var(--text); font: inherit; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+button { font: inherit; font-weight: 600; border-radius: 7px; border: 1px solid var(--line); padding: 7px 14px;
+  background: var(--panel); color: var(--text); cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; width: 100%; margin-top: 14px; padding: 9px; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.danger { color: var(--bad); }
+.bar { height: 6px; background: var(--panel-2); border-radius: 999px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--accent); width: 0; transition: width .4s; }
+.joblist { display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow: auto; }
+.job { border: 1px solid var(--line); border-radius: 8px; padding: 10px; cursor: pointer; }
+.job.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.job .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.job .meta { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin: 4px 0 6px; }
+.state { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--panel-2); }
+.state.COMPLETED { background: var(--ok-bg); color: var(--ok); }
+.state.FAILED { background: var(--bad-bg); color: var(--bad); }
+.state.CANCELLED { color: var(--muted); }
+.state.PROCESSING, .state.ANALYZING, .state.PLANNING, .state.VALIDATING, .state.STORING, .state.QUEUED { background: var(--accent-2); color: var(--accent); }
+.empty { color: var(--muted); text-align: center; padding: 40px 10px; }
+.title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.title-row h2 { margin: 0; font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--text); word-break: break-all; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { background: var(--panel-2); border-radius: 8px; padding: 10px 12px; }
+.stat .k { font-size: 12px; color: var(--muted); }
+.stat .v { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.stat .d { font-size: 12px; color: var(--muted); }
+.sizebars { margin-top: 12px; display: grid; gap: 6px; }
+.sizebar { display: grid; grid-template-columns: 70px 1fr 90px; gap: 8px; align-items: center; font-size: 12px; }
+.sizebar .track { height: 14px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+.sizebar .fill { height: 100%; border-radius: 4px; }
+.stage { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; user-select: none; }
+.stage.wipe { grid-template-columns: 1fr; }
+.stage.portrait.side { max-width: min(100%, calc(var(--vh-max) * 2 * var(--ar) + 6px)); margin: 0 auto; }
+.stage.wipe { max-width: min(100%, calc(var(--vh-max) * var(--ar))); margin: 0 auto; }
+.pane { position: relative; aspect-ratio: var(--ar); background: #000; border-radius: 8px; overflow: hidden; cursor: default; touch-action: none; }
+.pane.zoomed { cursor: grab; } .pane.zoomed:active { cursor: grabbing; }
+.stage.wipe .pane { grid-area: 1 / 1; }
+.stage.wipe .pane.enh { clip-path: inset(0 0 0 50%); }
+.pane video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform-origin: 50% 50%; will-change: transform; }
+.pane .tag { position: absolute; top: 8px; left: 8px; padding: 3px 9px; border-radius: 6px; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; font-weight: 600; pointer-events: none; z-index: 2; }
+.stage.wipe .pane.enh .tag { left: auto; right: 8px; }
+.handle { display: none; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; cursor: ew-resize; box-shadow: 0 0 6px rgba(0,0,0,.6); z-index: 3; }
+.stage.wipe .handle { display: block; }
+.handle::after { content: "⟷"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; color: #000; border-radius: 999px; width: 30px; height: 30px; display: grid; place-items: center; font-size: 14px; }
+.stage:fullscreen { background: #000; padding: 12px; max-width: none; align-content: center; }
+.stage:fullscreen .pane { max-height: calc(100vh - 24px); }
+@media (max-width: 700px) { .stage.side:not(.portrait) { grid-template-columns: 1fr; } }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.controls input[type=range] { flex: 1; min-width: 140px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 5px 10px; }
+.seg button.on { background: var(--accent); color: #fff; }
+.crops { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media (max-width: 700px) { .crops { grid-template-columns: 1fr; } }
+.crops figure { margin: 0; }
+.crops img { width: 100%; display: block; border-radius: 6px; image-rendering: auto; background: #000; cursor: zoom-in; }
+.crops figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.ops { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.ops li { display: grid; grid-template-columns: 150px 190px 1fr; gap: 10px; padding: 8px 10px; background: var(--panel-2); border-radius: 7px; font-size: 13px; }
+@media (max-width: 800px) { .ops li { grid-template-columns: 1fr; gap: 2px; } }
+.ops .n { font-weight: 650; }
+.ops .b { font-family: var(--mono); font-size: 12px; color: var(--accent); }
+.note { padding: 8px 12px; border-radius: 7px; margin: 6px 0; font-size: 13px; }
+.note.warn { background: var(--warn-bg); color: var(--warn); }
+.note.bad { background: var(--bad-bg); color: var(--bad); white-space: pre-wrap; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+td, th { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; }
+td.mono, .mono { font-family: var(--mono); font-size: 12px; word-break: break-all; }
+.pass { color: var(--ok); font-weight: 700; } .fail { color: var(--bad); font-weight: 700; } .adv { color: var(--warn); font-weight: 700; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { padding: 2px 9px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 1100px) { .grid2 { grid-template-columns: 1fr; } }
+details summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+a.btn { display: inline-block; text-decoration: none; font-weight: 600; border-radius: 7px; padding: 7px 14px; background: var(--accent); color: #fff; }
+.estimate { margin-top: 12px; padding: 10px 12px; border-radius: 8px; background: var(--accent-2); font-size: 13px; }
+.estimate .big { font-size: 18px; font-weight: 700; color: var(--accent); }
+.lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: none; place-items: center; z-index: 50; cursor: zoom-out; }
+.lightbox img { max-width: 96vw; max-height: 92vh; image-rendering: pixelated; }
+.lightbox.on { display: grid; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Hybrid Video Enhancer</h1>
+  <span class="sub">AI restoration + super-resolution + interpolation → 5.3K / 60 FPS</span>
+  <span class="spacer"></span>
+  <span id="device" class="badge">device: …</span>
+  <span id="storage" class="badge" title="Set VE_STORAGE_BACKEND=local|s3 and restart">storage: …</span>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>New enhancement</h2>
+      <div id="drop" class="drop">
+        <strong id="dropTitle">Drop a video here</strong>
+        <span id="dropSub">or click to choose (MP4, MOV, MKV…)</span>
+        <input id="file" type="file" accept="video/*,.mkv,.mov,.mp4,.avi,.webm" hidden>
+      </div>
+      <label for="preset">Quality preset</label>
+      <select id="preset"></select>
+      <div id="presetDesc" class="hint"></div>
+      <div class="row">
+        <div>
+          <label for="policy">Output</label>
+          <select id="policy">
+            <option value="5k3">5.3K (5312×2988)</option>
+            <option value="native">Native resolution</option>
+          </select>
+        </div>
+        <div>
+          <label for="interp">60 FPS interpolation</label>
+          <select id="interp">
+            <option value="auto">Auto (preset)</option>
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="aspect">Aspect ratio</label>
+          <select id="aspect"><option value="fit">Fit (pad)</option><option value="crop">Fill (crop)</option></select>
+        </div>
+        <div>
+          <label for="codec">Codec</label>
+          <select id="codec"><option value="preset">Preset (HEVC)</option><option value="hevc">HEVC</option><option value="h264">H.264</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="maxs">Process only (seconds)</label>
+          <input id="maxs" type="number" min="0" step="1" value="5">
+        </div>
+        <div>
+          <label for="start">Start at (seconds)</label>
+          <input id="start" type="number" min="0" step="1" value="0">
+        </div>
+      </div>
+      <div class="hint">Set 0 to process the whole video. The estimate below updates as you change settings.</div>
+      <div id="estimate" class="estimate" style="display:none"></div>
+      <button id="go" class="primary" disabled>Upload &amp; enhance</button>
+      <div id="up" style="display:none;margin-top:10px">
+        <div class="bar"><div id="upbar"></div></div>
+        <div id="uptext" class="hint"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Jobs</h2>
+      <div id="jobs" class="joblist"><div class="empty">No jobs yet</div></div>
+    </div>
+  </section>
+
+  <section id="detail">
+    <div class="card empty">Upload a video, then select a job to see the comparison.</div>
+  </section>
+</main>
+
+<div id="lightbox" class="lightbox"><img alt=""></div>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ACTIVE = new Set(["QUEUED","ANALYZING","PLANNING","PROCESSING","VALIDATING","STORING"]);
+let config = null, jobs = [], selected = (location.hash.match(/^#job=(\w+)/) || [])[1] || null, renderedKey = null, pollTimer = null;
+
+function fmtBytes(b) {
+  if (b == null) return "—";
+  const u = ["B","KB","MB","GB","TB"]; let i = 0, n = Math.abs(b);
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+  return (b < 0 ? "−" : "") + n.toFixed(n >= 100 || i === 0 ? 0 : 1) + " " + u[i];
+}
+const frac = s => { const [a, b] = String(s).split("/"); return +a / (+b || 1); };
+const fmtRate = b => b ? (b / 1e6).toFixed(b >= 1e7 ? 0 : 1) + " Mb/s" : "—";
+function fmtDur(s) {
+  if (s == null) return "—"; s = Math.round(s);
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return h ? `${h}h ${m}m` : m ? `${m}m ${x}s` : `${x}s`;
+}
+const ago = t => { const s = Date.now() / 1000 - t; return s < 60 ? "just now" : s < 3600 ? `${Math.floor(s/60)}m ago` : s < 86400 ? `${Math.floor(s/3600)}h ago` : new Date(t*1000).toLocaleDateString(); };
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) { let m = r.statusText; try { const j = await r.json(); m = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail); } catch {} throw new Error(m); }
+  return r.json();
+}
+
+// ------------------------------------------------------------------ config
+async function loadConfig() {
+  config = await api("/api/config");
+  const st = config.storage;
+  const sb = $("#storage");
+  sb.className = "badge " + st.backend;
+  sb.textContent = st.backend === "local" ? `storage: this computer (${fmtBytes(st.free_bytes)} free)` : `storage: S3 · ${st.location}`;
+  sb.title = `${st.location}\nSwitch with VE_STORAGE_BACKEND=local|s3 and restart the server.`;
+  $("#device").textContent = "device: " + config.device + (config.models["realesr-general-x4v3"].installed ? "" : " · models missing");
+  const sel = $("#preset");
+  sel.innerHTML = config.presets.map(p => `<option value="${esc(p.name)}">${esc(p.label)}</option>`).join("");
+  sel.value = config.defaults.preset;
+  const desc = () => $("#presetDesc").textContent = (config.presets.find(p => p.name === sel.value) || {}).description || "";
+  sel.onchange = desc; desc();
+}
+
+// ------------------------------------------------------------------ upload
+let chosen = null;
+const drop = $("#drop"), fileInput = $("#file");
+drop.onclick = () => fileInput.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) choose(e.dataTransfer.files[0]); };
+fileInput.onchange = () => fileInput.files[0] && choose(fileInput.files[0]);
+let meta = null;
+function choose(f) {
+  chosen = f; meta = null;
+  $("#dropTitle").textContent = f.name;
+  $("#dropSub").textContent = fmtBytes(f.size) + " · click to change";
+  $("#go").disabled = false;
+  // read size + duration locally (no upload) to estimate processing time
+  const v = document.createElement("video"), url = URL.createObjectURL(f);
+  v.preload = "metadata"; v.muted = true;
+  v.onloadedmetadata = () => { meta = {w: v.videoWidth, h: v.videoHeight, d: v.duration}; URL.revokeObjectURL(url); updateEstimate(); };
+  v.onerror = () => { URL.revokeObjectURL(url); showEstimate(null, "This browser can't read the file's details, so the estimate appears after upload and analysis."); };
+  v.src = url;
+}
+let estTimer = null;
+function updateEstimate() {
+  clearTimeout(estTimer);
+  estTimer = setTimeout(async () => {
+    if (!meta || !meta.w || !isFinite(meta.d)) return;
+    const q = new URLSearchParams({width: meta.w, height: meta.h, duration: meta.d.toFixed(3), preset: $("#preset").value,
+      output_policy: $("#policy").value, interpolation: $("#interp").value, start_seconds: parseFloat($("#start").value) || 0});
+    const ms = parseFloat($("#maxs").value); if (ms > 0) q.set("max_seconds", ms);
+    try { showEstimate(await api("/api/estimate?" + q)); } catch (e) { showEstimate(null, e.message); }
+  }, 250);
+}
+const RUNTIME = {coreml: "Neural Engine", mps: "GPU", cpu: "CPU"};
+function showEstimate(e, msg) {
+  const el = $("#estimate"); el.style.display = "block";
+  if (!e) { el.innerHTML = `<span class="hint">${esc(msg)}</span>`; return; }
+  const parts = [`${e.frames_out.toLocaleString()} output frames (${e.duration_seconds}s → ${e.target})`];
+  if (e.sr_runtime) parts.push(`upscaling on ${RUNTIME[e.sr_runtime] || e.sr_runtime}`);
+  if (e.order) parts.push(e.order === "upscale_first" ? "upscale, then interpolate" : "interpolate, then upscale");
+  el.innerHTML = `Estimated processing time <span class="big">≈ ${fmtDur(e.seconds)}</span>
+    <div class="hint">${esc(parts.join(" · "))}</div><div class="hint">Assumes ${e.assumed_fps} fps source · ${esc(e.basis)}</div>`;
+}
+["#preset", "#policy", "#interp", "#maxs", "#start"].forEach(id => $(id).addEventListener("input", updateEstimate));
+$("#go").onclick = () => {
+  if (!chosen) return;
+  const fd = new FormData();
+  fd.append("file", chosen);
+  fd.append("preset", $("#preset").value);
+  fd.append("output_policy", $("#policy").value);
+  fd.append("interpolation", $("#interp").value);
+  fd.append("aspect_mode", $("#aspect").value);
+  fd.append("codec", $("#codec").value);
+  const maxs = parseFloat($("#maxs").value);
+  if (maxs > 0) fd.append("max_seconds", maxs);
+  fd.append("start_seconds", parseFloat($("#start").value) || 0);
+  const xhr = new XMLHttpRequest();
+  $("#up").style.display = "block"; $("#go").disabled = true;
+  xhr.upload.onprogress = e => {
+    if (!e.lengthComputable) return;
+    const p = e.loaded / e.total * 100;
+    $("#upbar").style.width = p + "%";
+    $("#uptext").textContent = p < 100 ? `Uploading ${p.toFixed(0)}% of ${fmtBytes(e.total)}` : "Storing upload…";
+  };
+  xhr.onload = () => {
+    $("#go").disabled = false;
+    if (xhr.status >= 200 && xhr.status < 300) {
+      const job = JSON.parse(xhr.responseText);
+      $("#uptext").textContent = "Queued.";
+      setTimeout(() => $("#up").style.display = "none", 1500);
+      selected = job.id; refresh();
+    } else {
+      let m = xhr.statusText; try { const d = JSON.parse(xhr.responseText).detail; m = typeof d === "string" ? d : JSON.stringify(d); } catch {}
+      $("#uptext").textContent = "Upload failed: " + m;
+    }
+  };
+  xhr.onerror = () => { $("#go").disabled = false; $("#uptext").textContent = "Upload failed (network error)."; };
+  xhr.open("POST", "/api/jobs"); xhr.send(fd);
+};
+
+// ------------------------------------------------------------------ jobs
+async function refresh() {
+  try { jobs = await api("/api/jobs"); } catch (e) { return schedule(4000); }
+  renderList();
+  if (selected) renderDetail(jobs.find(j => j.id === selected));
+  schedule(jobs.some(j => ACTIVE.has(j.state)) ? 1500 : 6000);
+}
+function schedule(ms) { clearTimeout(pollTimer); pollTimer = setTimeout(refresh, ms); }
+
+function renderList() {
+  const el = $("#jobs");
+  if (!jobs.length) { el.innerHTML = '<div class="empty">No jobs yet</div>'; return; }
+  el.innerHTML = jobs.map(j => {
+    const p = j.progress || {};
+    const pct = j.state === "COMPLETED" ? 100 : Math.round((p.fraction || 0) * 100);
+    const eta = ACTIVE.has(j.state) && p.eta_seconds != null ? ` · ETA ${fmtDur(p.eta_seconds)}` : "";
+    return `<div class="job ${j.id === selected ? "sel" : ""}" data-id="${j.id}">
+      <div class="name" title="${esc(j.input.filename)}">${esc(j.input.filename)}</div>
+      <div class="meta"><span>${esc(j.options.preset)} · ${ago(j.created_at)}${eta}</span><span class="state ${j.state}">${j.state}</span></div>
+      ${ACTIVE.has(j.state) ? `<div class="bar"><div style="width:${pct}%"></div></div>` : ""}
+    </div>`;
+  }).join("");
+  el.querySelectorAll(".job").forEach(n => n.onclick = () => { selected = n.dataset.id; renderedKey = null; history.replaceState(null, "", "#job=" + selected); renderList(); renderDetail(jobs.find(j => j.id === selected)); });
+}
+
+// ------------------------------------------------------------------ detail
+function renderDetail(j) {
+  const host = $("#detail");
+  if (!j) { host.innerHTML = '<div class="card empty">Select a job.</div>'; return; }
+  // Rebuild heavy parts (videos) only when the job changes state, so playback isn't interrupted.
+  const key = j.id + ":" + j.state;
+  if (key === renderedKey && ACTIVE.has(j.state)) { updateProgress(j); return; }
+  if (key === renderedKey) return;
+  renderedKey = key;
+  const p = j.profile, plan = j.plan;
+  let html = `<div class="card"><div class="title-row"><h2>${esc(j.input.filename)}</h2><span class="state ${j.state}">${j.state}</span>
+    <span class="spacer"></span>
+    ${ACTIVE.has(j.state) ? `<button class="danger" id="cancel">Cancel</button>` : ""}
+    ${j.output ? `<a class="btn" href="${esc(j.output.download_url)}">Download ${fmtBytes(j.output.size_bytes)}</a>` : ""}
+    <button class="danger" id="del">Delete</button></div>
+    <div class="chips"><span class="chip">preset: ${esc(j.options.preset)}</span><span class="chip">output: ${j.options.output_policy === "5k3" ? "5.3K" : "native"}</span>
+    <span class="chip">stored: ${esc(j.storage_backend)}</span>${j.options.max_seconds ? `<span class="chip">first ${j.options.max_seconds}s from ${j.options.start_seconds}s</span>` : ""}</div>
+    <div id="progress" style="margin-top:12px"></div></div>`;
+  if (j.error) html += `<div class="card"><h2>Failed at ${esc(j.error.stage)}</h2><div class="note bad">${esc(j.error.message)}</div>${j.error.detail ? `<details><summary>Details</summary><pre class="mono">${esc(j.error.detail)}</pre></details>` : ""}</div>`;
+  if (j.size_comparison) html += sizeCard(j);
+  if (j.output && j.comparison) html += compareCard(j);
+  if (j.comparison && j.comparison.crops && j.comparison.crops.length) html += cropsCard(j);
+  if (plan) html += planCard(j);
+  if (p) html += sourceCard(j);
+  if (j.validation) html += validationCard(j);
+  if (j.metrics) html += metricsCard(j);
+  host.innerHTML = html;
+  updateProgress(j);
+  const c = $("#cancel"); if (c) c.onclick = async () => { try { await api(`/api/jobs/${j.id}/cancel`, {method: "POST"}); refresh(); } catch (e) { alert(e.message); } };
+  $("#del").onclick = async () => { if (!confirm("Delete this job and its stored files?")) return; await api(`/api/jobs/${j.id}`, {method: "DELETE"}); selected = null; renderedKey = null; refresh(); };
+  if (j.output && j.comparison) wireCompare();
+  host.querySelectorAll(".crops img").forEach(img => img.onclick = () => { const lb = $("#lightbox"); $("img", lb).src = img.src; lb.classList.add("on"); });
+  host.querySelectorAll("[data-region]").forEach(b => b.onclick = () => showRegion(j, b.dataset.region));
+}
+$("#lightbox").onclick = () => $("#lightbox").classList.remove("on");
+
+function updateProgress(j) {
+  const el = $("#progress"); if (!el) return;
+  const est = j.plan && j.plan.estimate && j.plan.estimate.seconds;
+  if (!ACTIVE.has(j.state)) { el.innerHTML = j.state === "COMPLETED" && j.metrics ? `<div class="hint">Processed ${j.metrics.frames_written} frames in ${fmtDur(j.metrics.wall_seconds)} (${j.metrics.throughput_fps} fps)${est ? ` · estimated ${fmtDur(est)}` : ""}</div>` : ""; return; }
+  const p = j.progress || {};
+  const pct = Math.round((p.fraction || 0) * 100);
+  const stageText = {QUEUED: "Waiting in queue", ANALYZING: "Analyzing source (FFprobe + degradation estimate)", PLANNING: "Planning processing stages",
+    PROCESSING: p.frames_total ? `Processing frame ${p.frames_done || 0} / ${p.frames_total} · ${p.fps || 0} fps` : "Starting models…",
+    VALIDATING: "Validating output", STORING: "Building comparison & storing files"}[j.state];
+  el.innerHTML = `<div class="bar"><div style="width:${j.state === "PROCESSING" ? pct : j.state === "QUEUED" ? 0 : 100}%"></div></div>
+    <div class="hint">${esc(stageText)}${j.state === "PROCESSING" && p.eta_seconds != null ? ` · ETA ${fmtDur(p.eta_seconds)}` : ""}${est ? ` · planned ≈ ${fmtDur(est)}` : ""}</div>`;
+}
+
+function sizeCard(j) {
+  const s = j.size_comparison, p = j.profile, o = j.validation.output;
+  const max = Math.max(s.input_bytes, s.output_bytes);
+  const inBr = p.video_bitrate, outBr = o.bitrate;
+  const delta = s.difference_bytes;
+  const window = j.plan.duration_seconds < p.duration_seconds - 0.05;
+  return `<div class="card"><h2>Size &amp; format</h2><div class="stats">
+    <div class="stat"><div class="k">Original file</div><div class="v">${fmtBytes(s.input_bytes)}</div><div class="d">${p.display_width}×${p.display_height} · ${p.nominal_fps} fps · ${esc(p.codec)}</div></div>
+    <div class="stat"><div class="k">Enhanced file</div><div class="v">${fmtBytes(s.output_bytes)}</div><div class="d">${o.width}×${o.height} · ${o.fps} fps · ${esc(o.codec)}</div></div>
+    <div class="stat"><div class="k">Difference</div><div class="v">${delta >= 0 ? "+" : ""}${fmtBytes(delta)}</div><div class="d">${s.ratio}× the original</div></div>
+    <div class="stat"><div class="k">Bitrate</div><div class="v">${fmtRate(outBr)}</div><div class="d">original ${fmtRate(inBr)}</div></div>
+    <div class="stat"><div class="k">Pixels per second</div><div class="v">${((o.width*o.height*o.fps)/(p.display_width*p.display_height*p.nominal_fps)).toFixed(1)}×</div><div class="d">${(o.width*o.height/1e6).toFixed(1)} MP @ ${o.fps} fps</div></div>
+  </div>
+  <div class="sizebars">
+    <div class="sizebar"><span>Original</span><div class="track"><div class="fill" style="width:${s.input_bytes/max*100}%;background:var(--muted)"></div></div><span>${fmtBytes(s.input_bytes)}</span></div>
+    <div class="sizebar"><span>Enhanced</span><div class="track"><div class="fill" style="width:${s.output_bytes/max*100}%;background:var(--accent)"></div></div><span>${fmtBytes(s.output_bytes)}</span></div>
+  </div>
+  ${window ? `<div class="hint" style="margin-top:8px">Note: only ${j.plan.duration_seconds}s of the ${p.duration_seconds}s source was processed; the original size is for the whole file.</div>` : ""}</div>`;
+}
+
+function compareCard(j) {
+  const u = j.comparison.urls || {}, pl = j.plan, p = j.profile, o = j.validation.output;
+  const srcUrl = u["source_preview.mp4"] || j.input.url;
+  const prevUrl = u["output_preview.mp4"];
+  const ar = pl.target_width / pl.target_height;
+  return `<div class="card"><h2>Side-by-side comparison</h2>
+    <div class="toolbar">
+      <span class="seg" id="mode"><button data-m="side" class="on">Side by side</button><button data-m="wipe">Wipe</button></span>
+      <span class="seg" id="zoom"><button data-z="1" class="on">Fit</button><button data-z="2">2×</button><button data-z="4">4×</button><button data-z="8">8×</button></span>
+      ${prevUrl ? `<span class="seg" id="qual"><button data-q="preview" class="on" title="H.264, plays in every browser">Preview (≤4K H.264)</button><button data-q="full" title="The exact output file (HEVC). Best in Safari.">Full-res file</button></span>` : ""}
+      <span class="spacer"></span>
+      <button id="fs" title="Fullscreen">⛶ Fullscreen</button>
+    </div>
+    <div id="stage" class="stage side ${ar < 1 ? "portrait" : ""}" style="--ar:${ar};--vh-max:72vh">
+      <div class="pane orig"><video id="vA" src="${esc(srcUrl)}" muted playsinline preload="auto" poster="${esc(u["poster_source.jpg"] || "")}"></video>
+        <span class="tag">Original · ${p.display_width}×${p.display_height} · ${p.nominal_fps} fps</span></div>
+      <div class="pane enh"><video id="vB" src="${esc(prevUrl || j.output.url)}" playsinline preload="auto" poster="${esc(u["poster_output.jpg"] || "")}"
+        data-preview="${esc(prevUrl || "")}" data-full="${esc(j.output.url)}"></video>
+        <span class="tag">Enhanced · ${o.width}×${o.height} · ${o.fps} fps</span></div>
+      <div class="handle" id="handle"></div>
+    </div>
+    <div class="controls">
+      <button id="play">▶ Play</button>
+      <button id="back" title="Previous frame (←)">◀︎ 1f</button>
+      <button id="fwd" title="Next frame (→)">1f ▶︎</button>
+      <input id="seek" type="range" min="0" max="1000" value="0" step="1">
+      <span id="time" class="mono">0.00s</span>
+      <select id="speed" style="width:auto"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option></select>
+    </div>
+    <div class="hint">Both videos play in sync. Zoom in and drag either video to pan; both move together, so you compare the same spot. Keys: space = play/pause, ←/→ = step one frame.
+      The original is shown at its own resolution and stretched by the browser, the way a normal player would show it.</div></div>`;
+}
+
+function wireCompare() {
+  const stage = $("#stage"), A = $("#vA"), B = $("#vB"), vids = [A, B];
+  const panes = [...stage.querySelectorAll(".pane")], handle = $("#handle");
+  let zoom = 1, tx = 0, ty = 0, wipe = 0.5;
+  const frameDur = 1 / (parseFloat(B.closest(".pane").querySelector(".tag").textContent.match(/([\d.]+) fps/)?.[1]) || 60);
+
+  // ---- synced zoom + pan (translate in pane pixels, before scaling)
+  const clamp = () => {
+    const r = panes[0].getBoundingClientRect(), mx = r.width * (zoom - 1) / 2 / zoom, my = r.height * (zoom - 1) / 2 / zoom;
+    tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty));
+  };
+  const apply = () => { clamp(); vids.forEach(v => v.style.transform = `scale(${zoom}) translate(${tx}px, ${ty}px)`); panes.forEach(p => p.classList.toggle("zoomed", zoom > 1)); };
+  $("#zoom").onclick = e => { const b = e.target.closest("button"); if (!b) return; zoom = +b.dataset.z; if (zoom === 1) tx = ty = 0;
+    $("#zoom").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); apply(); };
+  panes.forEach(p => {
+    let start = null;
+    p.onpointerdown = e => { if (zoom === 1 || e.target === handle) return; start = {x: e.clientX, y: e.clientY, tx, ty}; p.setPointerCapture(e.pointerId); };
+    p.onpointermove = e => { if (!start) return; tx = start.tx + (e.clientX - start.x) / zoom; ty = start.ty + (e.clientY - start.y) / zoom; apply(); };
+    p.onpointerup = p.onpointercancel = () => start = null;
+    p.onwheel = e => { if (zoom === 1) return; e.preventDefault(); tx -= e.deltaX / zoom; ty -= e.deltaY / zoom; apply(); };
+  });
+
+  // ---- wipe divider
+  const setWipe = x => { wipe = Math.min(1, Math.max(0, x)); panes[1].style.clipPath = stage.classList.contains("wipe") ? `inset(0 0 0 ${wipe*100}%)` : "none"; handle.style.left = wipe*100 + "%"; };
+  let drag = false;
+  handle.onpointerdown = e => { drag = true; handle.setPointerCapture(e.pointerId); e.stopPropagation(); };
+  handle.onpointermove = e => { if (!drag) return; const r = stage.getBoundingClientRect(); setWipe((e.clientX - r.left) / r.width); };
+  handle.onpointerup = () => drag = false;
+  $("#mode").onclick = e => { const b = e.target.closest("button"); if (!b) return;
+    stage.classList.toggle("wipe", b.dataset.m === "wipe"); stage.classList.toggle("side", b.dataset.m === "side");
+    $("#mode").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); setWipe(wipe); apply(); };
+
+  // ---- preview vs full-res source for the enhanced video
+  const q = $("#qual");
+  if (q) q.onclick = e => { const b = e.target.closest("button"); if (!b) return;
+    const t = B.currentTime, playing = !B.paused;
+    B.src = b.dataset.q === "full" ? B.dataset.full : B.dataset.preview;
+    B.addEventListener("loadedmetadata", () => { B.currentTime = t; A.currentTime = t; if (playing) B.play(); }, {once: true});
+    q.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); };
+
+  $("#fs").onclick = () => document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen?.();
+  document.onfullscreenchange = () => setTimeout(apply, 50);
+
+  // ---- playback: B (enhanced, has audio) is the master clock
+  const play = $("#play"), seek = $("#seek"), time = $("#time");
+  const sync = () => { if (Math.abs(A.currentTime - B.currentTime) > 0.05) A.currentTime = B.currentTime; };
+  const toggle = () => B.paused ? B.play() : B.pause();
+  const step = d => { B.pause(); B.currentTime = Math.max(0, Math.min(B.duration || 0, B.currentTime + d * frameDur)); A.currentTime = B.currentTime; };
+  play.onclick = toggle;
+  $("#back").onclick = () => step(-1); $("#fwd").onclick = () => step(1);
+  $("#speed").onchange = e => vids.forEach(v => v.playbackRate = +e.target.value);
+  B.onplay = () => { A.currentTime = B.currentTime; A.play().catch(() => {}); play.textContent = "❚❚ Pause"; };
+  B.onpause = () => { A.pause(); A.currentTime = B.currentTime; play.textContent = "▶ Play"; };
+  B.onended = () => { A.pause(); play.textContent = "▶ Play"; };
+  B.onseeked = sync;
+  B.ontimeupdate = () => { if (B.duration) seek.value = B.currentTime / B.duration * 1000;
+    time.textContent = `${B.currentTime.toFixed(2)}s / ${(B.duration || 0).toFixed(2)}s`; if (!B.paused) sync(); };
+  seek.oninput = () => { if (B.duration) { B.currentTime = seek.value / 1000 * B.duration; A.currentTime = B.currentTime; } };
+  B.onerror = () => { if (!$("#fullErr")) stage.insertAdjacentHTML("afterend", '<div id="fullErr" class="note warn">This browser cannot decode this video file. Switch back to “Preview”, use Safari, or download it.</div>'); };
+  document.onkeydown = e => {
+    if (!document.body.contains(stage) || e.target.matches("input, select, textarea")) return;
+    if (e.code === "Space") { e.preventDefault(); toggle(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+  };
+  window.onresize = apply;
+  setWipe(0.5);
+}
+
+function cropsCard(j) {
+  const crops = j.comparison.crops;
+  return `<div class="card"><h2>Detail at 1:1 output pixels <span style="text-transform:none;letter-spacing:0">(t = ${crops[0].time}s)</span></h2>
+    <div class="seg" style="margin-bottom:10px">${crops.map((c, i) => `<button data-region="${c.region}" class="${i === 0 ? "on" : ""}">${c.region === "detail" ? "Most detailed area" : "Centre"}</button>`).join("")}</div>
+    <div id="cropgrid" class="crops">${cropFigures(j, crops[0])}</div>
+    <div class="hint">Left: the source's real pixels. Middle: conventional Lanczos upscale. Right: this engine's output. Click to enlarge.</div></div>`;
+}
+function cropFigures(j, c) {
+  const u = j.comparison.urls;
+  return [["source","Original pixels (nearest)"],["lanczos","Lanczos upscale (baseline)"],["output","Enhanced output"]]
+    .map(([k, label]) => `<figure><img src="${esc(u[c[k]])}" alt="${label}" loading="lazy"><figcaption>${label} · ${c.width}×${c.height} at (${c.x}, ${c.y})</figcaption></figure>`).join("");
+}
+function showRegion(j, region) {
+  const c = j.comparison.crops.find(x => x.region === region);
+  $("#cropgrid").innerHTML = cropFigures(j, c);
+  document.querySelectorAll("[data-region]").forEach(b => b.classList.toggle("on", b.dataset.region === region));
+  document.querySelectorAll(".crops img").forEach(img => img.onclick = () => { const lb = $("#lightbox"); $("img", lb).src = img.src; lb.classList.add("on"); });
+}
+
+function planCard(j) {
+  const pl = j.plan;
+  return `<div class="card"><h2>What the engine did</h2>
+    <div class="chips" style="margin-bottom:10px">
+      <span class="chip">${pl.source_width}×${pl.source_height} → ${pl.target_width}×${pl.target_height}</span>
+      <span class="chip">${frac(pl.base_fps).toFixed(2)} → ${frac(pl.target_fps).toFixed(2)} fps (${esc(pl.fps_action)})</span>
+      <span class="chip">${pl.streaming ? "AI streaming pipeline" : "FFmpeg-only pipeline"}</span>
+      <span class="chip">${pl.expected_frames} frames</span></div>
+    ${pl.warnings.map(w => `<div class="note warn">⚠ ${esc(w)}</div>`).join("")}
+    <ul class="ops">${pl.operations.map(o => `<li><span class="n">${esc(o.name.replace(/_/g, " "))}</span><span class="b">${esc(o.backend)}</span><span>${esc(o.reason)}</span></li>`).join("")}</ul></div>`;
+}
+
+function sourceCard(j) {
+  const p = j.profile, d = j.degradation || {};
+  const rows = [["Container", p.container], ["Codec", `${p.codec}${p.profile ? " (" + p.profile + ")" : ""} · ${p.pixel_format} · ${p.bit_depth}-bit`],
+    ["Resolution", `${p.width}×${p.height}${p.rotation ? ` rotated ${p.rotation}° → ${p.display_width}×${p.display_height}` : ""} · SAR ${p.sample_aspect_ratio}`],
+    ["Frame rate", `${p.nominal_fps} nominal · ${p.avg_fps} average${p.is_vfr ? ` · VFR (jitter ${(p.timestamp_jitter*100).toFixed(1)}%)` : " · constant"}`],
+    ["Duration", `${p.duration_seconds}s${p.frame_count ? ` · ${p.frame_count} frames` : ""}`],
+    ["Bitrate", `${fmtRate(p.video_bitrate)}${p.bits_per_pixel ? ` · ${p.bits_per_pixel} bits/pixel` : ""}`],
+    ["Colour", `${p.color_primaries || "?"} / ${p.color_transfer || "?"} / ${p.color_space || "?"} · ${p.color_range || "?"} range${p.is_hdr ? " · HDR" : ""}`],
+    ["Scan", p.is_interlaced ? `interlaced (${p.field_order})` : "progressive"],
+    ["Audio", p.audio.length ? p.audio.map(a => `${a.codec} ${a.channels || "?"}ch ${a.sample_rate || "?"} Hz`).join(", ") : "none"]];
+  return `<div class="grid2"><div class="card"><h2>Source analysis</h2><table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${esc(v)}</td></tr>`).join("")}</table></div>
+    <div class="card"><h2>Degradation estimate</h2><div class="chips" style="margin-bottom:8px">${(d.labels || []).map(l => `<span class="chip">${esc(l)}</span>`).join("")}</div>
+    <table><tr><th>Noise σ</th><td>${d.noise_sigma} (${esc(d.noise_level)})</td></tr><tr><th>Blockiness</th><td>${d.blockiness}</td></tr>
+    <tr><th>Blur (h / v)</th><td>${d.blur_h} / ${d.blur_v}</td></tr><tr><th>Motion</th><td>${d.motion}</td></tr><tr><th>Duplicate frames</th><td>${Math.round((d.duplicate_ratio||0)*100)}%</td></tr></table>
+    ${(d.notes || []).map(n => `<div class="hint">• ${esc(n)}</div>`).join("")}</div></div>`;
+}
+
+function validationCard(j) {
+  const v = j.validation;
+  return `<div class="card"><h2>Validation — ${v.passed ? '<span class="pass">passed</span>' : '<span class="fail">failed</span>'}</h2><table>
+    <tr><th>Check</th><th>Expected</th><th>Actual</th><th></th></tr>
+    ${v.checks.map(c => `<tr><td>${esc(c.name)}${c.note ? `<div class="hint">${esc(c.note)}</div>` : ""}</td><td class="mono">${esc(c.expected)}</td><td class="mono">${esc(c.actual)}</td>
+      <td class="${c.passed ? "pass" : c.critical ? "fail" : "adv"}">${c.passed ? "✓" : c.critical ? "✗" : "!"}</td></tr>`).join("")}</table></div>`;
+}
+
+function metricsCard(j) {
+  const m = j.metrics, t = m.temporal || {}, it = m.interpolation;
+  const stages = Object.entries(m.stage_seconds || {}).map(([k, v]) => `<tr><td>${esc(k.replace(/_/g, " "))}</td><td class="mono">${v}s</td></tr>`).join("");
+  const models = Object.entries(m.models || {}).map(([k, x]) => `<tr><td>${esc(k.replace(/_/g, " "))}</td><td>${esc(x.model)} on ${esc(x.device)} (${esc(x.dtype)})${x.denoise_strength != null ? ` · denoise ${x.denoise_strength}` : ""}
+     <div class="hint">${esc(x.license)}</div>${Object.entries(x.files || {}).map(([f, h]) => `<div class="mono hint">${esc(f)} sha256:${esc((h || "").slice(0, 16))}…</div>`).join("")}</td></tr>`).join("");
+  return `<div class="grid2"><div class="card"><h2>Performance</h2><table>
+    <tr><td>Wall time</td><td class="mono">${fmtDur(m.wall_seconds)}</td></tr><tr><td>Throughput</td><td class="mono">${m.throughput_fps} output fps</td></tr>
+    <tr><td>Frames decoded → written</td><td class="mono">${m.frames_decoded} → ${m.frames_written}</td></tr><tr><td>Peak process memory</td><td class="mono">${m.peak_rss_mb} MB</td></tr>
+    ${stages}</table></div>
+    <div class="card"><h2>Models &amp; temporal quality</h2><table>${models || '<tr><td colspan="2">No AI models used (FFmpeg-only)</td></tr>'}
+    ${it ? `<tr><td>Interpolation</td><td>${it.generated} generated · ${it.passthrough} original · ${it.scene_cut_holds} scene-cut holds</td></tr>` : ""}
+    ${t.flicker_ratio != null ? `<tr><td>Flicker ratio</td><td>${t.flicker_ratio} <div class="hint">Frame-to-frame change after SR ÷ before SR. ≈1.0 means SR added no flicker.</div></td></tr>` : ""}
+    </table></div></div>`;
+}
+
+loadConfig().catch(e => { $("#storage").textContent = "server unreachable"; console.error(e); });
+refresh();
+</script>
+</body>
+</html>

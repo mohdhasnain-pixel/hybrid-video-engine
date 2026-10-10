@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" width="960" height="380" role="img" aria-label="Upscale first, interpolate with motion transfer">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.bg{fill:#ffffff}.card{fill:#f6f8fa;stroke:#d0d7de;stroke-width:1.5}.t{fill:#1f2328}.m{fill:#59636e}
+.acc{fill:#0969da}.accs{stroke:#0969da}.accbg{fill:#ddf4ff;stroke:#0969da;stroke-width:1.5}
+.grn{fill:#1a7f37}.grnbg{fill:#dafbe1;stroke:#1a7f37;stroke-width:1.5}.org{fill:#bc4c00}.orgbg{fill:#fff1e5;stroke:#bc4c00;stroke-width:1.5}
+.pur{fill:#8250df}.purbg{fill:#fbefff;stroke:#8250df;stroke-width:1.5}.line{stroke:#8c959f;stroke-width:2;fill:none}.mut{fill:#d0d7de}
+@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.card{fill:#161b22;stroke:#30363d}.t{fill:#e6edf3}.m{fill:#9198a1}
+.acc{fill:#4493f8}.accs{stroke:#4493f8}.accbg{fill:#0c2d6b;stroke:#4493f8}.grn{fill:#3fb950}.grnbg{fill:#0f2d1a;stroke:#3fb950}
+.org{fill:#f0883e}.orgbg{fill:#3d1d06;stroke:#f0883e}.pur{fill:#ab7df8}.purbg{fill:#2a1650;stroke:#ab7df8}.line{stroke:#6e7681}.mut{fill:#30363d}}
+</style>
+<rect class="bg" width="960" height="380" rx="16"/>
+<text x="30" y="40" class="t" font-size="19" font-weight="700">Upscale first, then interpolate with motion transfer</text>
+<text x="30" y="62" class="m" font-size="13.5">AI upscaling runs only on real frames; RIFE estimates motion on the small frames and the motion is applied to the 5.3K frames</text>
+<!-- small source frames -->
+<text x="30" y="104" class="m" font-size="12.5" font-weight="600">SOURCE 1080×1920 · 30 FPS</text>
+<rect class="card" x="30" y="116" width="58" height="96" rx="6"/><text x="59" y="170" class="t" font-size="16" font-weight="700" text-anchor="middle">A</text>
+<rect class="card" x="110" y="116" width="58" height="96" rx="6"/><text x="139" y="170" class="t" font-size="16" font-weight="700" text-anchor="middle">B</text>
+<g class="line"><path d="M178 164 H232"/><path d="M224 158 l8 6 -8 6"/></g>
+<rect class="grnbg" x="240" y="128" width="170" height="72" rx="10"/>
+<text x="325" y="158" class="grn" font-size="15" font-weight="700" text-anchor="middle">RIFE flow + mask</text>
+<text x="325" y="180" class="m" font-size="12.5" text-anchor="middle">at source size · ~0.14 s</text>
+<g class="line"><path d="M410 164 H464"/><path d="M456 158 l8 6 -8 6"/></g>
+<rect class="card" x="472" y="128" width="170" height="72" rx="10"/>
+<text x="557" y="158" class="t" font-size="15" font-weight="700" text-anchor="middle">Upsample flow</text>
+<text x="557" y="180" class="m" font-size="12.5" text-anchor="middle">×2.77 vectors &amp; mask</text>
+<path class="line" d="M557 200 V262"/><path class="line" d="M551 254 l6 8 6 -8"/>
+<!-- big enhanced frames -->
+<text x="30" y="250" class="m" font-size="12.5" font-weight="600">ENHANCED 2988×5312</text>
+<g transform="translate(30,262)"><rect class="orgbg" width="78" height="92" rx="6"/><text x="39" y="52" class="org" font-size="16" font-weight="700" text-anchor="middle">A′</text></g>
+<g transform="translate(122,262)"><rect class="orgbg" width="78" height="92" rx="6"/><text x="39" y="52" class="org" font-size="16" font-weight="700" text-anchor="middle">B′</text></g>
+<text x="215" y="300" class="m" font-size="12.5">upscaled on the</text><text x="215" y="318" class="m" font-size="12.5">Neural Engine</text>
+<g class="line"><path d="M330 308 H464"/><path d="M456 302 l8 6 -8 6"/></g>
+<rect class="card" x="472" y="270" width="170" height="76" rx="10"/>
+<text x="557" y="302" class="t" font-size="15" font-weight="700" text-anchor="middle">Warp + blend</text>
+<text x="557" y="324" class="m" font-size="12.5" text-anchor="middle">at full size · ~0.05 s</text>
+<g class="line"><path d="M642 308 H696"/><path d="M688 302 l8 6 -8 6"/></g>
+<g transform="translate(704,262)"><rect class="accbg" width="78" height="92" rx="6"/><text x="39" y="52" class="acc" font-size="15" font-weight="700" text-anchor="middle">A′½</text></g>
+<text x="800" y="290" class="t" font-size="13.5" font-weight="600">new 5.3K frame</text>
+<text x="800" y="310" class="m" font-size="12.5">upscaling work: half</text>
+<text x="800" y="328" class="m" font-size="12.5">GPU memory: 2.7 GB</text>
+<text x="800" y="346" class="m" font-size="12.5">vs 6.8 GB for full RIFE</text>
+</svg>

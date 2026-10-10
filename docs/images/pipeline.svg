@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" width="960" height="400" role="img" aria-label="Processing pipeline">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.bg{fill:#ffffff}.card{fill:#f6f8fa;stroke:#d0d7de;stroke-width:1.5}.t{fill:#1f2328}.m{fill:#59636e}
+.acc{fill:#0969da}.accs{stroke:#0969da}.accbg{fill:#ddf4ff;stroke:#0969da;stroke-width:1.5}
+.grn{fill:#1a7f37}.grnbg{fill:#dafbe1;stroke:#1a7f37;stroke-width:1.5}.org{fill:#bc4c00}.orgbg{fill:#fff1e5;stroke:#bc4c00;stroke-width:1.5}
+.pur{fill:#8250df}.purbg{fill:#fbefff;stroke:#8250df;stroke-width:1.5}.line{stroke:#8c959f;stroke-width:2;fill:none}.mut{fill:#d0d7de}
+@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.card{fill:#161b22;stroke:#30363d}.t{fill:#e6edf3}.m{fill:#9198a1}
+.acc{fill:#4493f8}.accs{stroke:#4493f8}.accbg{fill:#0c2d6b;stroke:#4493f8}.grn{fill:#3fb950}.grnbg{fill:#0f2d1a;stroke:#3fb950}
+.org{fill:#f0883e}.orgbg{fill:#3d1d06;stroke:#f0883e}.pur{fill:#ab7df8}.purbg{fill:#2a1650;stroke:#ab7df8}.line{stroke:#6e7681}.mut{fill:#30363d}}
+</style>
+<rect class="bg" width="960" height="400" rx="16"/>
+<text x="30" y="40" class="t" font-size="19" font-weight="700">Pipeline</text>
+<text x="30" y="62" class="m" font-size="13.5">Plan once, then stream frames through bounded queues: one thread per stage, constant memory</text>
+<g transform="translate(30,90)"><rect class="purbg" width="130" height="84" rx="10"/><text x="65" y="30" class="t" font-size="15" font-weight="700" text-anchor="middle">Analyze</text><text x="65" y="52" class="m" font-size="12.5" text-anchor="middle">ffprobe, timestamps</text><text x="65" y="70" class="m" font-size="12.5" text-anchor="middle">noise · blocks · blur</text></g>
+<g class="line"><path d="M160 132 H196"/><path d="M188 126 l8 6 -8 6"/></g>
+<g transform="translate(200,90)"><rect class="purbg" width="130" height="84" rx="10"/><text x="65" y="30" class="t" font-size="15" font-weight="700" text-anchor="middle">Plan</text><text x="65" y="52" class="m" font-size="12.5" text-anchor="middle">deterministic rules</text><text x="65" y="70" class="m" font-size="12.5" text-anchor="middle">+ cost model</text></g>
+<text x="300" y="200" class="m" font-size="12" text-anchor="end">every step has a reason</text>
+<rect class="card" x="30" y="222" width="900" height="150" rx="12" stroke-dasharray="5 4"/>
+<text x="46" y="246" class="m" font-size="12.5" font-weight="600">STREAMING EXECUTION</text>
+<g transform="translate(46,262)"><rect class="card" width="140" height="84" rx="10"/><text x="70" y="30" class="t" font-size="15" font-weight="700" text-anchor="middle">Decode</text><text x="70" y="52" class="m" font-size="12.5" text-anchor="middle">FFmpeg → RGB</text><text x="70" y="70" class="m" font-size="12.5" text-anchor="middle">CFR timeline, denoise</text></g>
+<g class="mut"><rect x="196" y="296" width="10" height="16" rx="2"/><rect x="209" y="296" width="10" height="16" rx="2"/></g>
+<g transform="translate(228,262)"><rect class="orgbg" width="150" height="84" rx="10"/><text x="75" y="30" class="t" font-size="15" font-weight="700" text-anchor="middle">Super-resolution</text><text x="75" y="52" class="m" font-size="12.5" text-anchor="middle">Real-ESRGAN 4×</text><text x="75" y="70" class="m" font-size="12.5" text-anchor="middle">Neural Engine (Core ML)</text></g>
+<g class="mut"><rect x="388" y="296" width="10" height="16" rx="2"/><rect x="401" y="296" width="10" height="16" rx="2"/></g>
+<g transform="translate(420,262)"><rect class="grnbg" width="150" height="84" rx="10"/><text x="75" y="30" class="t" font-size="15" font-weight="700" text-anchor="middle">Interpolation</text><text x="75" y="52" class="m" font-size="12.5" text-anchor="middle">RIFE v4.26</text><text x="75" y="70" class="m" font-size="12.5" text-anchor="middle">GPU · motion transfer</text></g>
+<g class="mut"><rect x="580" y="296" width="10" height="16" rx="2"/><rect x="593" y="296" width="10" height="16" rx="2"/></g>
+<g transform="translate(612,262)"><rect class="card" width="140" height="84" rx="10"/><text x="70" y="30" class="t" font-size="15" font-weight="700" text-anchor="middle">Encode</text><text x="70" y="52" class="m" font-size="12.5" text-anchor="middle">VideoToolbox HEVC</text><text x="70" y="70" class="m" font-size="12.5" text-anchor="middle">+ original audio</text></g>
+<g class="line"><path d="M752 304 H776"/><path d="M768 298 l8 6 -8 6"/></g>
+<g transform="translate(780,262)"><rect class="accbg" width="136" height="84" rx="10"/><text x="68" y="30" class="t" font-size="15" font-weight="700" text-anchor="middle">Validate</text><text x="68" y="52" class="m" font-size="12.5" text-anchor="middle">size · fps · duration</text><text x="68" y="70" class="m" font-size="12.5" text-anchor="middle">A/V sync → store</text></g>
+<path class="line" d="M310 174 V222"/>
+<text x="400" y="132" class="m" font-size="12.5">▮▮ bounded queue: back-pressure, never the whole video in memory</text>
+<text x="400" y="154" class="m" font-size="12.5">Neural Engine and GPU work in parallel; one lock keeps MPS thread-safe</text>
+</svg>

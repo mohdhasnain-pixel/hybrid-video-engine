@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+data/
+models/*.pth
+models/*.pkl
+models/manifest.json
+benchmarks/results/*
+!benchmarks/results/.gitkeep
+.env
+models/coreml/
+models/perf.json
+*.mlpackage
+uv.lock.bak
+.DS_Store

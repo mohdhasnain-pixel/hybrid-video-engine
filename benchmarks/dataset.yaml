@@ -1,0 +1,16 @@
+# Clean, high-quality reference clips. Each is degraded synthetically, then
+# restored by every pipeline and compared against the original frames.
+# Add your own footage (faces, foliage, sports, low light, camera motion...).
+clips:
+  - name: mandelbrot-zoom          # generated if no path is given
+    generate: "mandelbrot=s=1280x720:rate=60:end_scale=0.05"
+    seconds: 3
+  # - name: my-gopro-walk
+  #   path: /path/to/clean_4k60.mp4
+  #   seconds: 5
+
+degradation:
+  scale_divisor: 4      # reference 1280x720 -> 320x180 input
+  fps: 30               # drop to 30 fps so interpolation is exercised
+  noise: 12             # ffmpeg noise filter strength
+  crf: 32               # compression

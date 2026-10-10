@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" width="960" height="300" role="img" aria-label="Processing time for a 60-second 1080p clip to 5.3K 60 FPS">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.bg{fill:#ffffff}.card{fill:#f6f8fa;stroke:#d0d7de;stroke-width:1.5}.t{fill:#1f2328}.m{fill:#59636e}
+.acc{fill:#0969da}.accs{stroke:#0969da}.accbg{fill:#ddf4ff;stroke:#0969da;stroke-width:1.5}
+.grn{fill:#1a7f37}.grnbg{fill:#dafbe1;stroke:#1a7f37;stroke-width:1.5}.org{fill:#bc4c00}.orgbg{fill:#fff1e5;stroke:#bc4c00;stroke-width:1.5}
+.pur{fill:#8250df}.purbg{fill:#fbefff;stroke:#8250df;stroke-width:1.5}.line{stroke:#8c959f;stroke-width:2;fill:none}.mut{fill:#d0d7de}
+@media (prefers-color-scheme:dark){.bg{fill:#0d1117}.card{fill:#161b22;stroke:#30363d}.t{fill:#e6edf3}.m{fill:#9198a1}
+.acc{fill:#4493f8}.accs{stroke:#4493f8}.accbg{fill:#0c2d6b;stroke:#4493f8}.grn{fill:#3fb950}.grnbg{fill:#0f2d1a;stroke:#3fb950}
+.org{fill:#f0883e}.orgbg{fill:#3d1d06;stroke:#f0883e}.pur{fill:#ab7df8}.purbg{fill:#2a1650;stroke:#ab7df8}.line{stroke:#6e7681}.mut{fill:#30363d}}
+</style>
+<rect class="bg" width="960" height="300" rx="16"/>
+<text x="30" y="40" class="t" font-size="19" font-weight="700">Processing time: 60 s clip, 1080×1920 30 FPS → 5.3K 60 FPS</text>
+<text x="30" y="62" class="m" font-size="13.5">Apple M4 MacBook Pro, 16 GB · minutes, linear scale</text>
+<path d="M300.0 86 V258" class="line" stroke-width="1" opacity="0.35"/><text x="300.0" y="278" class="m" font-size="12" text-anchor="middle">0</text>
+<path d="M446.5 86 V258" class="line" stroke-width="1" opacity="0.35"/><text x="446.5" y="278" class="m" font-size="12" text-anchor="middle">2 h</text>
+<path d="M593.0 86 V258" class="line" stroke-width="1" opacity="0.35"/><text x="593.0" y="278" class="m" font-size="12" text-anchor="middle">4 h</text>
+<path d="M739.4 86 V258" class="line" stroke-width="1" opacity="0.35"/><text x="739.4" y="278" class="m" font-size="12" text-anchor="middle">6 h</text>
+<text x="30" y="112" class="t" font-size="14" font-weight="600">First version</text><text x="30" y="130" class="m" font-size="12">GPU (MPS), interpolate → upscale</text>
+<rect x="300" y="100" width="520.0" height="28" rx="4" class="m" opacity="0.85"/>
+<text x="808" y="118" font-size="14" font-weight="700" text-anchor="end" fill="#ffffff">≈ 7 h · observed pace 0.14 fps</text>
+<text x="30" y="168" class="t" font-size="14" font-weight="600">Fast preset, no AI</text><text x="30" y="186" class="m" font-size="12">FFmpeg Lanczos + sharpen</text>
+<rect x="300" y="156" width="12.8" height="28" rx="4" class="m" opacity="0.85"/>
+<text x="322.8" y="170" class="t" font-size="14" font-weight="700">≈ 10.5 min</text><text x="322.8" y="186" class="m" font-size="11.5">estimated from 5.7 fps measured</text>
+<text x="30" y="224" class="t" font-size="14" font-weight="600">Current Balanced</text><text x="30" y="242" class="m" font-size="12">Neural Engine + motion transfer</text>
+<rect x="300" y="212" width="37.0" height="28" rx="4" class="acc" opacity="1"/>
+<text x="347.0" y="226" class="t" font-size="14" font-weight="700">≈ 30 min</text><text x="347.0" y="242" class="m" font-size="11.5">observed pace: 1.98 fps</text>
+</svg>

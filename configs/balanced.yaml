@@ -1,0 +1,11 @@
+name: balanced
+order: 2
+label: Balanced (default)
+description: >
+  Conservative restoration, compact AI super-resolution (Real-ESRGAN
+  general-x4v3), RIFE interpolation when the source is below the target frame
+  rate, hardware HEVC encoding.
+restoration: {enabled: auto, max_strength: medium, deblock: true}
+super_resolution: {backend: ai, model: realesr-general-x4v3, denoise_strength: auto}
+interpolation: {mode: auto, backend: rife, order: auto}
+encoder: {codec: hevc, hardware: true, quality: 62}

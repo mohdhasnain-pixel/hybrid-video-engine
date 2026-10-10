@@ -1,0 +1,11 @@
+name: fast
+order: 1
+label: Fast
+description: >
+  Quick results. FFmpeg Lanczos scaling, light denoise only when the source
+  clearly needs it, no AI. Lower frame rates are repeated (not interpolated)
+  unless interpolation is explicitly requested.
+restoration: {enabled: auto, max_strength: light, deblock: false}
+super_resolution: {backend: ffmpeg, final_sharpen: cas}
+interpolation: {mode: "off", backend: ffmpeg}
+encoder: {codec: hevc, hardware: true, quality: 55}

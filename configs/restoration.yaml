@@ -1,0 +1,14 @@
+name: restoration
+order: 4
+label: Maximum Restoration
+description: >
+  For difficult footage. Strongest restoration, AI super-resolution even for
+  small scale factors, restore-and-upscale BEFORE interpolation (higher cost),
+  temporal report. The AI invents plausible detail: faces, text and number
+  plates may not match reality.
+restoration: {enabled: "on", max_strength: strong, deblock: true}
+super_resolution: {backend: ai, model: realesr-general-x4v3, denoise_strength: auto, min_factor_for_ai: 1.1}
+interpolation: {mode: auto, backend: rife, order: upscale_first, scene_change_threshold: 0.10}
+encoder: {codec: hevc, hardware: true, quality: 72, ten_bit: true}
+temporal_checks: true
+hallucination_warning: true

@@ -1,0 +1,11 @@
+name: quality
+order: 3
+label: Quality
+description: >
+  Degradation-aware restoration, AI super-resolution, RIFE interpolation with
+  scene-cut protection, temporal-consistency report and 10-bit HEVC output.
+restoration: {enabled: auto, max_strength: strong, deblock: true}
+super_resolution: {backend: ai, model: realesr-general-x4v3, denoise_strength: auto, min_factor_for_ai: 1.3}
+interpolation: {mode: auto, backend: rife, order: auto, scene_change_threshold: 0.10}
+encoder: {codec: hevc, hardware: true, quality: 70, ten_bit: true}
+temporal_checks: true
